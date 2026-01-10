@@ -1,0 +1,41 @@
+{
+  "expo": {
+    "name": "Voice Memo Cleaner",
+    "slug": "voice-memo-cleaner",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#667eea"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.yourname.voicememocleaner",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app needs microphone access to record voice memos.",
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to transcribe your voice memos."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#667eea"
+      },
+      "package": "com.yourname.voicememocleaner",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Voice Memo Cleaner to access your microphone."
+        }
+      ]
+    ]
+  }
+}
