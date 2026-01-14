@@ -92,6 +92,21 @@ app.get('/test-groq', async (req, res) => {
   }
 });
 
+// Helper function to convert audio to compatible format
+const convertAudioToMp3 = async (inputPath, outputPath) => {
+  const { exec } = require('child_process');
+  const { promisify } = require('util');
+  const execPromise = promisify(exec);
+
+  try {
+    await execPromise(`ffmpeg -i "${inputPath}" -acodec libmp3lame -ab 128k "${outputPath}"`);
+    return true;
+  } catch (error) {
+    console.error('FFmpeg conversion error:', error);
+    return false;
+  }
+};
+
 // Main processing endpoint (transcribe + summarize)
 app.post('/api/process', upload.single('audio'), async (req, res) => {
   console.log('📥 Received processing request');
@@ -110,10 +125,28 @@ app.post('/api/process', upload.single('audio'), async (req, res) => {
     console.log(`👤 User: ${userId}`);
     console.log(`📁 File: ${req.file.originalname} (${req.file.size} bytes)`);
 
+    // Check if file needs conversion (m4a → mp3)
+    let audioFilePath = req.file.path;
+    const needsConversion = req.file.originalname?.toLowerCase().endsWith('.m4a') ||
+                           req.file.mimetype === 'audio/x-m4a';
+
+    if (needsConversion) {
+      console.log('🔄 Converting m4a to mp3...');
+      const mp3Path = req.file.path + '.mp3';
+      const converted = await convertAudioToMp3(req.file.path, mp3Path);
+
+      if (converted) {
+        audioFilePath = mp3Path;
+        console.log('✅ Conversion successful');
+      } else {
+        console.warn('⚠️ Conversion failed, trying original file...');
+      }
+    }
+
     // Step 1: Transcribe with Groq Whisper
     console.log('🎤 Step 1: Transcribing audio...');
 
-    const audioFile = fs.createReadStream(req.file.path);
+    const audioFile = fs.createReadStream(audioFilePath);
 
     const transcription = await groq.audio.transcriptions.create({
       file: audioFile,
@@ -211,8 +244,11 @@ JSON:`;
       }
     }
 
-    // Clean up uploaded file
+    // Clean up uploaded file(s)
     fs.unlinkSync(req.file.path);
+    if (needsConversion && audioFilePath !== req.file.path && fs.existsSync(audioFilePath)) {
+      fs.unlinkSync(audioFilePath);
+    }
     console.log('🗑️ Temporary file cleaned up');
 
     // Send response
@@ -232,9 +268,12 @@ JSON:`;
   } catch (error) {
     console.error('❌ Processing error:', error);
 
-    // Clean up file if it exists
+    // Clean up file(s) if they exist
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
+    }
+    if (audioFilePath && audioFilePath !== req.file.path && fs.existsSync(audioFilePath)) {
+      fs.unlinkSync(audioFilePath);
     }
 
     res.status(500).json({
@@ -256,7 +295,25 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 
     console.log(`📁 Processing file: ${req.file.originalname}`);
 
-    const audioFile = fs.createReadStream(req.file.path);
+    // Check if file needs conversion
+    let audioFilePath = req.file.path;
+    const needsConversion = req.file.originalname?.toLowerCase().endsWith('.m4a') ||
+                           req.file.mimetype === 'audio/x-m4a';
+
+    if (needsConversion) {
+      console.log('🔄 Converting m4a to mp3...');
+      const mp3Path = req.file.path + '.mp3';
+      const converted = await convertAudioToMp3(req.file.path, mp3Path);
+
+      if (converted) {
+        audioFilePath = mp3Path;
+        console.log('✅ Conversion successful');
+      } else {
+        console.warn('⚠️ Conversion failed, trying original file...');
+      }
+    }
+
+    const audioFile = fs.createReadStream(audioFilePath);
 
     const transcription = await groq.audio.transcriptions.create({
       file: audioFile,
@@ -266,8 +323,11 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
       temperature: 0.0
     });
 
-    // Clean up
+    // Clean up files
     fs.unlinkSync(req.file.path);
+    if (needsConversion && audioFilePath !== req.file.path && fs.existsSync(audioFilePath)) {
+      fs.unlinkSync(audioFilePath);
+    }
 
     console.log('✅ Transcription successful');
 
@@ -282,6 +342,9 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
+    }
+    if (audioFilePath && audioFilePath !== req.file.path && fs.existsSync(audioFilePath)) {
+      fs.unlinkSync(audioFilePath);
     }
 
     res.status(500).json({
