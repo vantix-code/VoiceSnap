@@ -35,6 +35,13 @@
         {
           "microphonePermission": "Allow Voice Memo Cleaner to access your microphone."
         }
+      ],
+       [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.yourcompany.voiceMemoCleaner",
+          "enableGooglePay": true
+        }
       ]
     ]
   }
