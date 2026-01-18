@@ -5,6 +5,7 @@ node_modules/
 
 # Expo
 .expo/
+.idea/
 dist/
 web-build/
 expo-env.d.ts
@@ -55,3 +56,6 @@ backend/uploads/
 # OS
 .DS_Store
 EOF
+
+
+.idea/
