@@ -112,8 +112,6 @@ export const getUserRecordings = async (userId: string) => {
   return data;
 };
 
-
-
 export const uploadAudioFile = async (
   userId: string,
   audioUri: string,
@@ -122,36 +120,22 @@ export const uploadAudioFile = async (
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error('No session');
-    console.log('Supabase URL:', supabaseUrl);
+
     const filePath = `${userId}/${filename}`;
 
-    fetch('https://google.com')
-      .then(() => console.log('🌍 Internet OK'))
-      .catch(() => console.log('❌ No internet'));
+    const file = await FileSystem.readAsStringAsync(audioUri, {
+      encoding: 'base64',
+    });
 
+    const { error } = await supabase.storage
+      .from('audio-recordings')
+      .upload(filePath, Buffer.from(file, 'base64'), {
+        contentType: 'audio/m4a',
+        upsert: true,
+      });
 
-    const formData = new FormData();
-    formData.append('file', {
-      uri: audioUri,
-      name: filename,
-      type: 'audio/m4a',
-    } as any);
-
-    const response = await fetch(
-      `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/audio-recordings/${filePath}`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`, // 🔥 FIX
-
-        },
-        body: formData,
-      }
-    );
-
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('Upload failed:', text);
+    if (error) {
+      console.error('Upload failed:', error);
       return null;
     }
 
