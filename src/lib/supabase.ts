@@ -117,41 +117,91 @@ export const uploadAudioFile = async (
   audioUri: string,
   filename: string
 ): Promise<string | null> => {
+  console.log('🟡 uploadAudioFile START');
+  console.log('userId:', userId);
+  console.log('audioUri:', audioUri);
+  console.log('filename:', filename);
+  console.log('supabaseUrl:', supabaseUrl);
+
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('No session');
+    console.log('🟡 Getting session...');
+    const sessionRes = await supabase.auth.getSession();
+    console.log('Session response:', sessionRes);
 
-    const filePath = `${userId}/${filename}`;
-
-    const file = await FileSystem.readAsStringAsync(audioUri, {
-      encoding: 'base64',
-    });
-
-    const { error } = await supabase.storage
-      .from('audio-recordings')
-      .upload(filePath, Buffer.from(file, 'base64'), {
-        contentType: 'audio/m4a',
-        upsert: true,
-      });
-
-    if (error) {
-      console.error('Upload failed:', error);
+    const session = sessionRes.data.session;
+    if (!session) {
+      console.error('🔴 NO SESSION');
       return null;
     }
 
-    const { data } = supabase.storage
+    console.log('🟢 Session OK');
+    console.log('Access token length:', session.access_token.length);
+
+    const filePath = `${userId}/${filename}`;
+    console.log('File path:', filePath);
+
+    // STEP 1: check local file
+    console.log('🟡 Fetching local audio file...');
+    const localResponse = await fetch(audioUri);
+
+    console.log('Local fetch status:', localResponse.status);
+    console.log('Local fetch headers:', localResponse.headers);
+
+    if (!localResponse.ok) {
+      console.error('🔴 Failed to read local file');
+      return null;
+    }
+
+    console.log('🟡 Converting to blob...');
+    const blob = await localResponse.blob();
+
+    console.log('🟢 Blob created');
+    console.log('Blob size:', blob.size);
+    console.log('Blob type:', blob.type);
+
+    // STEP 2: upload to Supabase
+    const uploadUrl = `${supabaseUrl}/storage/v1/object/audio-recordings/${filePath}`;
+    console.log('Upload URL:', uploadUrl);
+
+    console.log('🟡 Uploading...');
+    const uploadResponse = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': blob.type || 'audio/m4a',
+      },
+      body: blob,
+    });
+
+    console.log('Upload status:', uploadResponse.status);
+    console.log('Upload headers:', uploadResponse.headers);
+
+    const uploadText = await uploadResponse.text();
+    console.log('Upload response text:', uploadText);
+
+    if (!uploadResponse.ok) {
+      console.error('🔴 Upload failed');
+      return null;
+    }
+
+    console.log('🟢 Upload SUCCESS');
+
+    const publicUrlRes = supabase.storage
       .from('audio-recordings')
       .getPublicUrl(filePath);
 
-    return data.publicUrl;
+    console.log('Public URL result:', publicUrlRes);
 
-  } catch (e) {
-    console.error('❌ Upload error:', e);
+    return publicUrlRes.data.publicUrl;
+
+  } catch (err) {
+    console.error('🔥 CATCH ERROR:', err);
+    console.error('🔥 ERROR TYPE:', typeof err);
+    console.error('🔥 ERROR STRING:', String(err));
+    console.error('🔥 ERROR JSON:', JSON.stringify(err, null, 2));
     return null;
   }
 };
-
-
 
 // Delete recording
 export const deleteRecording = async (recordingId: string) => {

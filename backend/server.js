@@ -107,9 +107,10 @@ const convertAudioToMp3 = async (inputPath, outputPath) => {
   }
 };
 
-// Main processing endpoint (transcribe + summarize)
+// Fixed /api/process endpoint - Replace in server.js
 app.post('/api/process', upload.single('audio'), async (req, res) => {
   console.log('📥 Received processing request');
+  let audioFilePath = null;
 
   try {
     const { userId, recordingId } = req.body;
@@ -124,29 +125,27 @@ app.post('/api/process', upload.single('audio'), async (req, res) => {
 
     console.log(`👤 User: ${userId}`);
     console.log(`📁 File: ${req.file.originalname} (${req.file.size} bytes)`);
+    console.log(`📝 Temp path: ${req.file.path}`);
 
-    // Check if file needs conversion (m4a → mp3)
-    let audioFilePath = req.file.path;
-    const needsConversion = req.file.originalname?.toLowerCase().endsWith('.m4a') ||
-                           req.file.mimetype === 'audio/x-m4a';
-
-    if (needsConversion) {
-      console.log('🔄 Converting m4a to mp3...');
-      const mp3Path = req.file.path + '.mp3';
-      const converted = await convertAudioToMp3(req.file.path, mp3Path);
-
-      if (converted) {
-        audioFilePath = mp3Path;
-        console.log('✅ Conversion successful');
-      } else {
-        console.warn('⚠️ Conversion failed, trying original file...');
-      }
-    }
+    // Rename file to have .m4a extension (Groq needs this!)
+    audioFilePath = req.file.path + '.m4a';
+    fs.renameSync(req.file.path, audioFilePath);
+    console.log(`✅ Renamed to: ${path.basename(audioFilePath)}`);
 
     // Step 1: Transcribe with Groq Whisper
     console.log('🎤 Step 1: Transcribing audio...');
 
-    const audioFile = fs.createReadStream(audioFilePath);
+    // Read file as buffer
+    const audioBuffer = fs.readFileSync(audioFilePath);
+    console.log(`📦 Buffer size: ${audioBuffer.length} bytes`);
+
+    // Create File object with proper name
+    const { File } = require('buffer');
+    const audioFile = new File([audioBuffer], 'recording.m4a', {
+      type: 'audio/m4a'
+    });
+
+    console.log('📤 Sending to Groq Whisper API...');
 
     const transcription = await groq.audio.transcriptions.create({
       file: audioFile,
@@ -208,7 +207,6 @@ JSON:`;
     try {
       summary = JSON.parse(responseText);
     } catch (parseError) {
-      // Fallback parsing if JSON is wrapped
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         summary = JSON.parse(jsonMatch[0]);
@@ -217,7 +215,6 @@ JSON:`;
       }
     }
 
-    // Validate structure
     if (!summary.bullets || !summary.action || !summary.email) {
       throw new Error('Invalid summary structure from AI');
     }
@@ -244,12 +241,15 @@ JSON:`;
       }
     }
 
-    // Clean up uploaded file(s)
-    fs.unlinkSync(req.file.path);
-    if (needsConversion && audioFilePath !== req.file.path && fs.existsSync(audioFilePath)) {
-      fs.unlinkSync(audioFilePath);
+    // Clean up
+    try {
+      if (audioFilePath && fs.existsSync(audioFilePath)) {
+        fs.unlinkSync(audioFilePath);
+        console.log('🗑️ Temporary file cleaned up');
+      }
+    } catch (cleanupError) {
+      console.error('⚠️ Cleanup error:', cleanupError.message);
     }
-    console.log('🗑️ Temporary file cleaned up');
 
     // Send response
     res.json({
@@ -267,13 +267,19 @@ JSON:`;
 
   } catch (error) {
     console.error('❌ Processing error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      status: error.status,
+      type: error.constructor.name
+    });
 
-    // Clean up file(s) if they exist
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-    if (audioFilePath && audioFilePath !== req.file.path && fs.existsSync(audioFilePath)) {
-      fs.unlinkSync(audioFilePath);
+    // Clean up on error
+    try {
+      if (audioFilePath && fs.existsSync(audioFilePath)) {
+        fs.unlinkSync(audioFilePath);
+      }
+    } catch (cleanupError) {
+      console.error('⚠️ Cleanup error:', cleanupError.message);
     }
 
     res.status(500).json({
@@ -283,7 +289,6 @@ JSON:`;
     });
   }
 });
-
 // Transcribe only endpoint (for testing)
 app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
   console.log('📥 Transcription request received');
