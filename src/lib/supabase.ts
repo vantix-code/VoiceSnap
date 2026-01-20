@@ -1,8 +1,8 @@
-// src/lib/supabase.ts
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
 
 // Get environment variables from Expo
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -112,41 +112,46 @@ export const getUserRecordings = async (userId: string) => {
   return data;
 };
 
-// Upload audio file
 export const uploadAudioFile = async (
   userId: string,
   audioUri: string,
   filename: string
 ): Promise<string | null> => {
   try {
-    const response = await fetch(audioUri);
-    const blob = await response.blob();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('No session');
 
     const filePath = `${userId}/${filename}`;
 
-    const { data, error } = await supabase.storage
+    const file = await FileSystem.readAsStringAsync(audioUri, {
+      encoding: 'base64',
+    });
+
+    const { error } = await supabase.storage
       .from('audio-recordings')
-      .upload(filePath, blob, {
+      .upload(filePath, Buffer.from(file, 'base64'), {
         contentType: 'audio/m4a',
-        upsert: false
+        upsert: true,
       });
 
     if (error) {
-      console.error('Upload error:', error);
+      console.error('Upload failed:', error);
       return null;
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    const { data } = supabase.storage
       .from('audio-recordings')
       .getPublicUrl(filePath);
 
-    return urlData.publicUrl;
-  } catch (error) {
-    console.error('Upload error:', error);
+    return data.publicUrl;
+
+  } catch (e) {
+    console.error('❌ Upload error:', e);
     return null;
   }
 };
+
+
 
 // Delete recording
 export const deleteRecording = async (recordingId: string) => {
