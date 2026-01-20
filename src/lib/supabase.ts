@@ -1,8 +1,8 @@
-// src/lib/supabase.ts
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system';
 
 // Get environment variables from Expo
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -112,92 +112,62 @@ export const getUserRecordings = async (userId: string) => {
   return data;
 };
 
-// Upload audio file
+
+
 export const uploadAudioFile = async (
   userId: string,
   audioUri: string,
   filename: string
 ): Promise<string | null> => {
   try {
-    console.log('📤 Starting audio upload...');
-    console.log('User ID:', userId);
-    console.log('Filename:', filename);
-    console.log('Audio URI:', audioUri);
-
-    // Read file
-    const response = await fetch(audioUri);
-    if (!response.ok) {
-      throw new Error(`Failed to read audio file: ${response.status}`);
-    }
-
-    const blob = await response.blob();
-    console.log('✅ File read successfully. Size:', blob.size, 'bytes');
-
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('No session');
+    console.log('Supabase URL:', supabaseUrl);
     const filePath = `${userId}/${filename}`;
-    console.log('Upload path:', filePath);
 
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('audio-recordings')
-      .upload(filePath, blob, {
-        contentType: 'audio/m4a',
-        upsert: false
-      });
+    fetch('https://google.com')
+      .then(() => console.log('🌍 Internet OK'))
+      .catch(() => console.log('❌ No internet'));
 
-    if (error) {
-      console.error('❌ Upload error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        statusCode: error.statusCode,
-        name: error.name
-      });
 
-      // Better error messages
-      if (error.message.includes('new row violates row-level security')) {
-        console.error('💡 RLS Error: Storage policies not configured correctly');
-      } else if (error.message.includes('Bucket not found')) {
-        console.error('💡 Bucket Error: "audio-recordings" bucket does not exist');
-      } else if (error.message.includes('duplicate')) {
-        console.error('💡 File already exists. Trying upsert...');
-        // Retry with upsert
-        const { data: retryData, error: retryError } = await supabase.storage
-          .from('audio-recordings')
-          .upload(filePath, blob, {
-            contentType: 'audio/m4a',
-            upsert: true
-          });
+    const formData = new FormData();
+    formData.append('file', {
+      uri: audioUri,
+      name: filename,
+      type: 'audio/m4a',
+    } as any);
 
-        if (retryError) {
-          console.error('❌ Retry failed:', retryError);
-          return null;
-        }
+    const response = await fetch(
+      `${process.env.EXPO_PUBLIC_SUPABASE_URL}/storage/v1/object/audio-recordings/${filePath}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`, // 🔥 FIX
 
-        console.log('✅ Upload successful (upsert)');
-      } else {
-        return null;
+        },
+        body: formData,
       }
+    );
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Upload failed:', text);
+      return null;
     }
 
-    console.log('✅ File uploaded successfully!');
-    console.log('Upload data:', data);
-
-    // Get public URL
-    const { data: urlData } = supabase.storage
+    const { data } = supabase.storage
       .from('audio-recordings')
       .getPublicUrl(filePath);
 
-    console.log('✅ Public URL generated:', urlData.publicUrl);
-    return urlData.publicUrl;
+    return data.publicUrl;
 
-  } catch (error: any) {
-    console.error('❌ Upload exception:', error);
-    console.error('Exception details:', {
-      message: error.message,
-      stack: error.stack
-    });
+  } catch (e) {
+    console.error('❌ Upload error:', e);
     return null;
   }
 };
+
+
 
 // Delete recording
 export const deleteRecording = async (recordingId: string) => {
