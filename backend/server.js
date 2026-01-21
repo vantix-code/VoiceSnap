@@ -416,45 +416,45 @@ Respond with ONLY this JSON structure:
 });
 
 // Check subscription status
-app.post('/api/check-subscription', async (req, res) => {
-  try {
-    const { userId } = req.body;
+// app.post('/api/check-subscription', async (req, res) => {
+//   try {
+//     const { userId } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
+//     if (!userId) {
+//       return res.status(400).json({ error: 'userId is required' });
+//     }
 
-    const { data: profile, error } = await supabase
-      .from('profiles')
-      .select('subscription_status, recordings_this_month, subscription_end_date')
-      .eq('id', userId)
-      .single();
+//     const { data: profile, error } = await supabase
+//       .from('profiles')
+//       .select('subscription_status, recordings_this_month, subscription_end_date')
+//       .eq('id', userId)
+//       .single();
 
-    if (error) {
-      throw error;
-    }
+//     if (error) {
+//       throw error;
+//     }
 
-    const isPremium = profile.subscription_status === 'premium' &&
-                      new Date(profile.subscription_end_date) > new Date();
+//     const isPremium = profile.subscription_status === 'premium' &&
+//                       new Date(profile.subscription_end_date) > new Date();
 
-    const canRecord = isPremium || profile.recordings_this_month < 5;
+//     const canRecord = isPremium || profile.recordings_this_month < 5;
 
-    res.json({
-      success: true,
-      isPremium,
-      canRecord,
-      recordingsUsed: profile.recordings_this_month,
-      recordingsLimit: isPremium ? 'unlimited' : 5
-    });
+//     res.json({
+//       success: true,
+//       isPremium,
+//       canRecord,
+//       recordingsUsed: profile.recordings_this_month,
+//       recordingsLimit: isPremium ? 'unlimited' : 5
+//     });
 
-  } catch (error) {
-    console.error('Subscription check error:', error);
-    res.status(500).json({
-      error: 'Failed to check subscription',
-      message: error.message
-    });
-  }
-});
+//   } catch (error) {
+//     console.error('Subscription check error:', error);
+//     res.status(500).json({
+//       error: 'Failed to check subscription',
+//       message: error.message
+//     });
+//   }
+// });
 
 // 404 handler
 app.use((req, res) => {
@@ -485,7 +485,6 @@ app.listen(PORT, () => {
   console.log(`   POST ${PORT}/api/process      - Full processing (transcribe + summarize)`);
   console.log(`   POST ${PORT}/api/transcribe   - Transcription only`);
   console.log(`   POST ${PORT}/api/summarize    - Summarization only`);
-  console.log(`   POST ${PORT}/api/check-subscription - Check user limits`);
   console.log('\n✅ Server ready to accept requests!\n');
   console.log('Press CTRL+C to stop\n');
 });

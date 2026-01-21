@@ -47,24 +47,24 @@ export const getUserProfile = async (userId: string) => {
 };
 
 // Check if user can record
-export const canUserRecord = async (userId: string) => {
-  const profile = await getUserProfile(userId);
+// export const canUserRecord = async (userId: string) => {
+//   const profile = await getUserProfile(userId);
   
-  if (!profile) {
-    return { canRecord: false, recordingsUsed: 0, isPremium: false };
-  }
+//   if (!profile) {
+//     return { canRecord: false, recordingsUsed: 0, isPremium: false };
+//   }
 
-  const isPremium = profile.subscription_status === 'premium' &&
-                    new Date(profile.subscription_end_date) > new Date();
+//   const isPremium = profile.subscription_status === 'premium' &&
+//                     new Date(profile.subscription_end_date) > new Date();
   
-  const canRecord = isPremium || profile.recordings_this_month < 5;
+//   const canRecord = isPremium || profile.recordings_this_month < 5;
 
-  return {
-    canRecord,
-    recordingsUsed: profile.recordings_this_month,
-    isPremium
-  };
-};
+//   return {
+//     canRecord,
+//     recordingsUsed: profile.recordings_this_month,
+//     isPremium
+//   };
+// };
 
 // Save recording
 export const saveRecording = async (
