@@ -14,7 +14,7 @@ import RecordingScreen from './src/screens/RecordingScreen';
 import ResultsScreen from './src/screens/ResultsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
-import PaywallScreen from './src/screens/PaywallScreen';
+
 
 const Stack = createNativeStackNavigator();
 
@@ -112,14 +112,7 @@ export default function App() {
                 component={SettingsScreen}
                 options={{ title: 'Settings' }}
               />
-              <Stack.Screen 
-                name="Paywall" 
-                component={PaywallScreen}
-                options={{ 
-                  title: 'Go Premium',
-                  presentation: 'modal'
-                }}
-              />
+
             </>
           )}
         </Stack.Navigator>

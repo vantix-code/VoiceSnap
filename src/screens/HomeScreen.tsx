@@ -1,4 +1,4 @@
-
+// src/screens/HomeScreen.tsx - Free Version (No Payment)
 import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
@@ -9,18 +9,12 @@ import {
   Alert,
   ActivityIndicator
 } from 'react-native';
-import { supabase, canUserRecord, getCurrentUser } from '../lib/supabase';
+import { supabase, getCurrentUser, getUserRecordings } from '../lib/supabase';
 
-interface HomeScreenProps {
-  navigation: any;
-}
-
-export default function HomeScreen({ navigation }: HomeScreenProps) {
+export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
-  const [recordingsUsed, setRecordingsUsed] = useState(0);
-  const [isPremium, setIsPremium] = useState(false);
-  const [canRecord, setCanRecord] = useState(true);
+  const [recordingsCount, setRecordingsCount] = useState(0);
 
   useEffect(() => {
     loadUserData();
@@ -40,13 +34,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       if (profile) {
         setUserName(profile.full_name || user.email?.split('@')[0] || 'User');
-        setRecordingsUsed(profile.recordings_this_month);
-        
-        const premium = profile.subscription_status === 'premium' &&
-                       new Date(profile.subscription_end_date) > new Date();
-        setIsPremium(premium);
-        setCanRecord(premium || profile.recordings_this_month < 5);
       }
+
+      // Get recordings count
+      const recordings = await getUserRecordings(user.id);
+      setRecordingsCount(recordings.length);
+
     } catch (error) {
       console.error('Error loading user data:', error);
     } finally {
@@ -54,13 +47,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
     }
   };
 
-  const handleStartRecording = async () => {
-    if (!canRecord && !isPremium) {
-      // Show paywall
-      navigation.navigate('Paywall');
-      return;
-    }
-
+  const handleStartRecording = () => {
     navigation.navigate('Recording');
   };
 
@@ -99,60 +86,39 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.greeting}>Hello, {userName}! 👋</Text>
         <Text style={styles.subtitle}>Ready to capture your thoughts?</Text>
       </View>
 
-      {/* Usage Stats */}
+      {/* Stats Card */}
       <View style={styles.statsCard}>
-        {isPremium ? (
-          <>
-            <View style={styles.premiumBadge}>
-              <Text style={styles.premiumText}>✨ PREMIUM</Text>
-            </View>
-            <Text style={styles.statsText}>Unlimited recordings this month</Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.statsNumber}>{recordingsUsed} / 5</Text>
-            <Text style={styles.statsText}>Recordings used this month</Text>
-            {recordingsUsed >= 5 && (
-              <TouchableOpacity 
-                style={styles.upgradeButton}
-                onPress={() => navigation.navigate('Paywall')}
-              >
-                <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
-              </TouchableOpacity>
-            )}
-          </>
-        )}
+        <View style={styles.freeBadge}>
+          <Text style={styles.freeBadgeText}>✨ FREE UNLIMITED</Text>
+        </View>
+        <Text style={styles.statsNumber}>{recordingsCount}</Text>
+        <Text style={styles.statsText}>Total Recordings</Text>
+        <Text style={styles.statsSubtext}>No limits • 100% Free</Text>
       </View>
 
       {/* Main Action Button */}
       <TouchableOpacity
-        style={[
-          styles.recordButton,
-          !canRecord && !isPremium && styles.recordButtonDisabled
-        ]}
+        style={styles.recordButton}
         onPress={handleStartRecording}
         activeOpacity={0.8}
       >
         <View style={styles.recordButtonInner}>
           <Text style={styles.recordButtonIcon}>🎙️</Text>
-          <Text style={styles.recordButtonText}>
-            {canRecord || isPremium ? 'Start Recording' : 'Upgrade to Record'}
-          </Text>
-          <Text style={styles.recordButtonSubtext}>
-            {canRecord || isPremium ? 'Tap to begin' : 'Free limit reached'}
-          </Text>
+          <Text style={styles.recordButtonText}>Start Recording</Text>
+          <Text style={styles.recordButtonSubtext}>Tap to begin</Text>
         </View>
       </TouchableOpacity>
 
       {/* Feature Cards */}
       <View style={styles.featuresContainer}>
         <Text style={styles.sectionTitle}>Features</Text>
-        
+
         <View style={styles.featureCard}>
           <Text style={styles.featureIcon}>📝</Text>
           <View style={styles.featureContent}>
@@ -179,6 +145,16 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
             <Text style={styles.featureTitle}>Organized History</Text>
             <Text style={styles.featureDescription}>
               Access all your recordings and summaries anytime
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.featureCard}>
+          <Text style={styles.featureIcon}>🔒</Text>
+          <View style={styles.featureContent}>
+            <Text style={styles.featureTitle}>Private & Secure</Text>
+            <Text style={styles.featureDescription}>
+              Your data is encrypted and stored securely
             </Text>
           </View>
         </View>
@@ -213,7 +189,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Voice Memo Cleaner • Made with ❤️
+          Voice Memo Cleaner • 100% Free • Made with ❤️
         </Text>
       </View>
     </ScrollView>
@@ -258,39 +234,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    position: 'relative',
   },
-  premiumBadge: {
-    backgroundColor: '#FFD700',
+  freeBadge: {
+    position: 'absolute',
+    top: -12,
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
-  premiumText: {
-    fontSize: 14,
+  freeBadgeText: {
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#333',
+    color: 'white',
   },
   statsNumber: {
     fontSize: 48,
     fontWeight: 'bold',
     color: '#667eea',
+    marginTop: 8,
     marginBottom: 8,
   },
   statsText: {
     fontSize: 16,
     color: '#666',
+    marginBottom: 4,
   },
-  upgradeButton: {
-    backgroundColor: '#667eea',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    marginTop: 16,
-  },
-  upgradeButtonText: {
-    color: 'white',
-    fontSize: 16,
+  statsSubtext: {
+    fontSize: 14,
+    color: '#4CAF50',
     fontWeight: '600',
   },
   recordButton: {
@@ -304,10 +277,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 8,
-  },
-  recordButtonDisabled: {
-    backgroundColor: '#ccc',
-    shadowColor: '#999',
   },
   recordButtonInner: {
     alignItems: 'center',
