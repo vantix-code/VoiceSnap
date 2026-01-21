@@ -12,10 +12,6 @@ Transform your voice memos into actionable insights with AI-powered transcriptio
 - **💾 History** - Access all your past recordings
 - **🔒 Private & Secure** - Your data stays protected
 
-## 💰 Pricing
-
-- **Free**: 5 recordings per month
-- **Premium**: $4.99/month - Unlimited recordings + advanced features
 
 ## 🛠️ Tech Stack
 
@@ -30,12 +26,11 @@ Transform your voice memos into actionable insights with AI-powered transcriptio
 - Node.js + Express
 - Groq API (Whisper Large v3 + Llama 3.3 70B)
 - Supabase (PostgreSQL)
-- Stripe (Payments)
 
 ### Infrastructure
 - Supabase (FREE tier)
 - Groq API (FREE tier - 14,400 requests/day)
-- Total cost: **$99/year** (just Apple Developer account!)
+- Total cost: **$0/month** (switching to Android - $25 one-time Google Play fee)
 
 ## 🚀 Quick Start
 
@@ -43,7 +38,6 @@ Transform your voice memos into actionable insights with AI-powered transcriptio
 - Node.js 18+
 - npm or yarn
 - Expo CLI
-- Apple Developer Account ($99/year)
 - Groq API key (free at console.groq.com)
 - Supabase account (free at supabase.com)
 
@@ -51,8 +45,8 @@ Transform your voice memos into actionable insights with AI-powered transcriptio
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/voice-memo-cleaner.git
-cd voice-memo-cleaner
+git clone https://github.com/yourusername/voicesnap.git
+cd voicesnap
 
 # Install frontend dependencies
 npm install
@@ -84,23 +78,7 @@ npm start
 npx expo start
 ```
 
-Scan the QR code with your phone to test the app.
-
-## 📱 Building for iOS
-
-```bash
-# Login to Expo
-eas login
-
-# Configure EAS
-eas build:configure
-
-# Build for TestFlight
-eas build --platform ios --profile production
-
-# Submit to App Store
-eas submit --platform ios
-```
+Scan the QR code with Expo Go app on your phone to test.
 
 ## 🗄️ Database Schema
 
@@ -158,15 +136,19 @@ Health check
 curl http://localhost:3000/health
 ```
 
+### GET /test-groq
+Test Groq API connection
+```bash
+curl http://localhost:3000/test-groq
+```
+
 ## 🔐 Environment Variables
 
 ### Frontend (.env)
 ```bash
 EXPO_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-EXPO_PUBLIC_GROQ_API_KEY=gsk_...
-EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-EXPO_PUBLIC_API_URL=http://localhost:3000
+EXPO_PUBLIC_API_URL=http://YOUR_LOCAL_IP:3000
 ```
 
 ### Backend (backend/.env)
@@ -174,7 +156,6 @@ EXPO_PUBLIC_API_URL=http://localhost:3000
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJ... (SECRET!)
 GROQ_API_KEY=gsk_...
-STRIPE_SECRET_KEY=sk_test_...
 PORT=3000
 NODE_ENV=development
 ```
@@ -184,60 +165,19 @@ NODE_ENV=development
 ### Test Backend
 ```bash
 cd backend
-npm test
+node test-groq.js
 ```
 
-### Test API Endpoints
-```bash
-# Health check
-curl http://localhost:3000/health
 
-# Test Groq connection
-curl http://localhost:3000/test-groq
+## 📱 App Screens
 
-# Test summarization
-curl -X POST http://localhost:3000/api/summarize \
-  -H "Content-Type: application/json" \
-  -d '{"transcript": "Test transcript here"}'
-```
-
-## 📈 Performance
-
-- **Transcription**: ~5-10 seconds for 1-minute audio
-- **Summarization**: ~2-3 seconds
-- **Total processing**: ~10-15 seconds per recording
-- **API Rate Limits**:
-    - Groq Chat: 14,400 requests/day (FREE)
-    - Groq Whisper: 7,200 seconds/day (FREE)
-
-## 🐛 Common Issues
-
-### "Cannot connect to backend"
-- Ensure backend is running (`cd backend && npm start`)
-- Check your local IP in `EXPO_PUBLIC_API_URL`
-- Verify firewall isn't blocking port 3000
-
-### "Groq API error"
-- Check API key is valid at console.groq.com
-- Verify `.env` files have correct keys
-- Check rate limits in Groq dashboard
-
-### "Recording upload fails"
-- Check `backend/uploads/` folder exists
-- Verify file permissions: `chmod 755 backend/uploads`
-- Check file size limit (default 25MB)
-
-## 📝 Development Roadmap
-
-- [x] Basic recording functionality
-- [x] AI transcription (Groq Whisper)
-- [x] AI summarization (Llama 3.3)
-- [x] User authentication
-- [x] Database integration
-- [ ] Stripe payment integration
-- [ ] App Store submission
-- [ ] Marketing website
-- [ ] Beta testing program
+1. **Login/Sign Up** - Email authentication via Supabase
+2. **Home** - Quick record + usage stats + recent recordings
+3. **Record** - One-tap recording with timer (10-minute max)
+4. **Results** - Bullet points + action item + email draft
+5. **History** - All past recordings with search
+6. **Settings** - Profile, subscription status, logout
+7. **Paywall** - Premium upgrade prompt after 5 recordings
 
 ## 🤝 Contributing
 
@@ -247,12 +187,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
 
-- Groq for blazing-fast AI inference
-- Supabase for backend infrastructure
-- Expo for mobile development platform
-- OpenAI for Whisper model architecture
 
 ## 📧 Contact
 
@@ -262,4 +197,3 @@ For questions or support, please open an issue on GitHub.
 
 **Built with ❤️ using open-source technologies**
 
-Total cost: ~$99/year • Time to build: 6-8 weeks • Potential revenue: $499+ MRR
