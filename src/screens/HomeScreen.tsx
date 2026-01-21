@@ -189,7 +189,7 @@ export default function HomeScreen({ navigation }: any) {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Voice Memo Cleaner • 100% Free • Made with ❤️
+          VoiceSnap • 100% Free • Made with ❤️
         </Text>
       </View>
     </ScrollView>

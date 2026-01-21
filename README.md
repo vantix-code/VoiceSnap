@@ -1,4 +1,4 @@
-# 🎙️ Voice Memo Cleaner
+# 🎙️ VoiceSnap
 
 Transform your voice memos into actionable insights with AI-powered transcription and summarization.
 

@@ -1,7 +1,7 @@
 {
   "name": "voice-memo-cleaner-backend",
   "version": "1.0.0",
-  "description": "Backend API for Voice Memo Cleaner with Groq AI",
+  "description": "Backend API for VoiceSnap with Groq AI",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

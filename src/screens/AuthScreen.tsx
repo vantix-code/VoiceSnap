@@ -84,7 +84,7 @@ export default function AuthScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.icon}>🎙️</Text>
-          <Text style={styles.title}>Voice Memo Cleaner</Text>
+          <Text style={styles.title}>VoiceSnap</Text>
           <Text style={styles.subtitle}>
             Transform your voice memos into actionable insights
           </Text>

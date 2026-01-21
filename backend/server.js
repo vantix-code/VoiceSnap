@@ -1,4 +1,4 @@
-// backend/server.js - Voice Memo Cleaner Backend API
+// backend/server.js - VoiceSnap Backend API
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -476,7 +476,7 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   console.log('\n' + '='.repeat(50));
-  console.log('🚀 Voice Memo Cleaner Backend Server');
+  console.log('🚀 VoiceSnap Backend Server');
   console.log('='.repeat(50));
   console.log(`📍 Server running on: http://localhost:${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);

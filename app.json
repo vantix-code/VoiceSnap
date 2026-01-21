@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Voice Memo Cleaner",
-    "slug": "voice-memo-cleaner",
+    "name": "VoiceSnap",
+    "slug": "voicesnap",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.jpg",
@@ -35,7 +35,7 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Allow Voice Memo Cleaner to access your microphone."
+          "microphonePermission": "Allow VoiceSnap to access your microphone."
         }
       ],
        [
