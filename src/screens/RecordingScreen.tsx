@@ -482,12 +482,12 @@ export default function RecordingScreen({ navigation }: RecordingScreenProps) {
       </View>
 
       {/* Tips */}
-      <View style={styles.tipsContainer}>
+      {/* <View style={styles.tipsContainer}>
         <Text style={styles.tipsTitle}>💡 Tips for Best Results:</Text>
         <Text style={styles.tipText}>• Speak clearly in a quiet environment</Text>
         <Text style={styles.tipText}>• Keep recordings under 10 minutes</Text>
         <Text style={styles.tipText}>• State action items explicitly</Text>
-      </View>
+      </View> */}
     </View>
   );
 }
